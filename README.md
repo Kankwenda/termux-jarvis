@@ -28,10 +28,10 @@ SMS, notifications, vibration… via SSH + tunnel Cloudflare.
    cd termux-jarvis
    bash setup.sh
    ```
-4. Le script affiche deux choses à envoyer à Jarvis : **l'adresse du
-   tunnel** (`xxxx.trycloudflare.com`) et **le nom d'utilisateur SSH**
-   (`u0_a...`).
-5. Jarvis teste alors la connexion et allume la lampe à distance
+4. Le script envoie l'adresse du tunnel à Jarvis **tout seul** (via
+   webhook.site) : Prince n'a rien à copier. Laisse Termux ouvert et dis
+   juste à Jarvis « c'est fait ».
+5. Jarvis récupère l'adresse, se connecte en SSH et allume la lampe à distance
    (`termux-torch on`).
 
 ## Sécurité
@@ -63,3 +63,12 @@ SMS, notifications, vibration… via SSH + tunnel Cloudflare.
   — OK sur la machine de Jarvis.
 - Scripts écrits d'après le patron prouvé de `walker-slm/termux/start-cloudflare.sh`
   (`pkg install -y cloudflared`, `termux-wake-lock`, tunnel en avant-plan).
+- 14 nov. 2026, 12:17–12:21 — Prince corrige deux fois : il ne veut PAS être
+  l'intermédiaire, c'est Jarvis qui doit utiliser son Termux directement.
+  Changement de stratégie : le téléphone envoie l'adresse du tunnel à Jarvis
+  tout seul. `ntfy.sh` testé depuis la VM : BLOQUÉ par le proxy (403).
+  `webhook.site` testé : boucle complète OK (POST 200, relecture OK, jeton
+  `7e90bb44-630c-45c6-9b57-cef69c6036e0`, expire le 21 nov. 2026).
+  `setup.sh` envoie désormais `{host, user}` en JSON sur ce jeton (3 essais) ;
+  `watch.sh` côté Jarvis attend l'adresse puis lance `connect.sh`.
+  L'adresse seule ne donne aucun accès (SSH par clé uniquement).
