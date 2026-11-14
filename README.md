@@ -72,3 +72,17 @@ SMS, notifications, vibration… via SSH + tunnel Cloudflare.
   `setup.sh` envoie désormais `{host, user}` en JSON sur ce jeton (3 essais) ;
   `watch.sh` côté Jarvis attend l'adresse puis lance `connect.sh`.
   L'adresse seule ne donne aucun accès (SSH par clé uniquement).
+
+## Journal — 14 nov. 2026 ~20h20 CAT : tunnel bloqué côté Jarvis, repli poller
+
+- Prince a relancé `setup.sh?v=2` : les 5 étapes sont OK côté téléphone (paquets, clé SSH autorisée, sshd, test lampe OK, tunnel `suites-confirmed-christmas-pin.trycloudflare.com`, utilisateur `u0_a283`). L'adresse est bien arrivée toute seule sur webhook.site (20h18 CAT).
+- **Connexion SSH impossible depuis la machine de Jarvis (vérifié deux fois, cause racine trouvée) :**
+  1. Via le proxy : `cloudflared access tcp` échoue — `websocket: bad handshake`.
+  2. Sans proxy (direct) : `tls: first record does not look like a TLS handshake` — le réseau intercepte tout.
+  3. `https://api.trycloudflare.com` et l'hôte du tunnel lui-même répondent 403 via le proxy.
+  Conclusion : le proxy de cette machine bloque tout Cloudflare (tunnels + API). Le tunnel existe côté téléphone, mais Jarvis ne peut pas l'utiliser. Route tunnel ABANDONNÉE (règle anti-boucle : 2 échecs, cause racine identifiée).
+- **Repli : poller webhook.site (`poll.sh`).** Le canal webhook.site fonctionne dans les deux sens (il a déjà livré l'adresse du tunnel). Le téléphone vérifie toutes les 20 s s'il y a une commande, exécute uniquement celles qui portent le bon mot secret, et renvoie le résultat sur le même jeton.
+  - Lancement (une commande à coller dans Termux) : `curl -sL "https://raw.githubusercontent.com/Kankwenda/termux-jarvis/master/poll.sh" | bash -s <JETON> <SECRET>` — jeton et secret donnés à Prince dans le chat, JAMAIS dans ce dépôt public.
+  - Côté Jarvis : `send-cmd.sh "<commande>"` envoie et attend le résultat (max 90 s).
+  - Jeton poller : créé le 14 nov. 2026, expire le 21 nov. 2026 18:23 UTC — après cette date, en créer un nouveau et mettre à jour `send-cmd.sh` + la commande donnée à Prince.
+  - Sécurité : sans le secret, une commande postée sur le jeton est ignorée. Le secret n'est stocké que dans le chat de Prince et dans `.poll-secret` (chmod 600, exclu du dépôt par `.gitignore`, comme `send-cmd.sh`).
