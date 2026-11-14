@@ -46,11 +46,13 @@ command -v termux-wake-lock >/dev/null 2>&1 && termux-wake-lock
 
 echo "=== 5/5 Tunnel Cloudflare vers le SSH ==="
 echo "Utilisateur SSH : $(whoami)"
-cloudflared tunnel --url tcp://localhost:8022 --no-autoupdate > /tmp/jarvis-tunnel.log 2>&1 &
+# Termux n'a pas de dossier /tmp : le journal va dans le dossier personnel.
+TUNNEL_LOG="$HOME/jarvis-tunnel.log"
+cloudflared tunnel --url tcp://localhost:8022 --no-autoupdate > "$TUNNEL_LOG" 2>&1 &
 TUNNEL_PID=$!
 trap 'kill $TUNNEL_PID 2>/dev/null; exit' INT TERM
 sleep 10
-TUNNEL_HOST=$(grep -oE "[a-z0-9.-]+\.trycloudflare\.com" /tmp/jarvis-tunnel.log | head -1)
+TUNNEL_HOST=$(grep -oE "[a-z0-9.-]+\.trycloudflare\.com" "$TUNNEL_LOG" | head -1)
 echo "Adresse du tunnel : $TUNNEL_HOST"
 # Envoie l'adresse à Jarvis tout seul : Prince n'a rien à copier.
 if [ -n "$TUNNEL_HOST" ]; then
@@ -63,6 +65,6 @@ if [ -n "$TUNNEL_HOST" ]; then
   echo "Adresse envoyée à Jarvis automatiquement."
 fi
 echo ""
-echo "Laisse Termux ouvert. Si aucune adresse ne s'affiche, regarde /tmp/jarvis-tunnel.log"
+echo "Laisse Termux ouvert. Si aucune adresse ne s'affiche, regarde $TUNNEL_LOG"
 echo "Pour arrêter : Ctrl+C (le tunnel s'arrête, la clé reste autorisée)."
 wait $TUNNEL_PID
